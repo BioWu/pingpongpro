@@ -41,9 +41,9 @@ using namespace seqan;
 // Types & Classes
 // ==========================================================================
 
-#if defined(WIN32) || defined(_WIN32) 
-#define PATH_DELIMITER '\\' 
-#else 
+#if defined(WIN32) || defined(_WIN32)
+#define PATH_DELIMITER '\\'
+#else
 #define PATH_DELIMITER '/'
 #endif
 
@@ -389,6 +389,43 @@ unsigned int stopwatch(unsigned int verbosity)
 	return stopwatch("", verbosity);
 }
 
+//split string into list
+char **GetStrArray(char* s,const char* d)
+{
+    char* s_s=new char[strlen(s)];
+	strcpy(s_s,s);
+	//length of string
+	int rows=0;
+    char *p_str=strtok(s_s,d);
+	while(p_str)
+    {
+		rows+=1;
+        p_str=strtok(NULL,d);
+	}
+	//indicating array
+	char **strArray=new char*[rows+1];
+	for(int i=0;i<rows;i++)
+	{
+        strArray[i]=NULL;
+	}
+	strArray[0]=i2cp(rows);  //array_ length
+	//
+	int index=1;
+	s_s=new char[strlen(s)];
+	strcpy(s_s,s);
+    p_str=strtok(s_s,d);
+	while(p_str)
+    {
+        char* s_p=new char[strlen(p_str)];
+	    strcpy(s_p,p_str);
+		//add to array
+        strArray[index]=s_p;
+		//
+		index+=1;
+        p_str=strtok(NULL,d);
+	}
+	return strArray;
+}
 // Function which finds stacks of reads in a BAM file.
 // Input parameters:
 //	bamFile: the BAM/SAM file from where to load the reads
@@ -428,11 +465,14 @@ int countReadsInBamFile(BamStream &bamFile, TReadStacksPerGenome &readStacks, co
 
 			// the stack height is increased by the value of this variable (depends on how multi-hits are handled)
 			float readWeight;
-
+			int read_num = 0
+			char **strArray=GetStrArray(record.qName, "x");
+			read_num = atoi( strArray[2] )
 			if (countMultiHits == multiHitsUnique) // we do not distinguish between multi-hits and unique hits
 			{
 				// increase stack height by 1, regardless of whether it is a multi-hit or unique hit
-				readWeight = 1;
+				// readWeight = 1;
+				readWeight = read_num;
 			}
 			else
 			{
@@ -446,12 +486,14 @@ int countReadsInBamFile(BamStream &bamFile, TReadStacksPerGenome &readStacks, co
 				if (countMultiHits == multiHitsWeighted)
 				{
 					// increase stack height by fraction
-					readWeight = 1.0 / multiHits;
+					// readWeight = 1.0 / multiHits;
+					readWeight = 1.0 * read_num / multiHits;
 				}
 				else /*if (countMultiHits == multiHitsDiscard)*/
 				{
 					// discard read (i.e., set readWeight to 0), if there is more than 1 instance in the SAM file
-					readWeight = (multiHits == 1) ? 1 : 0;
+					// readWeight = (multiHits == 1) ? 1 : 0;
+					readWeight = (multiHits == 1) ? read_num : 0;
 				}
 			}
 
@@ -1063,7 +1105,7 @@ void readTransposonsFromFile(ifstream &transposonFile, TFileFormat fileFormat, T
 	while (transposonFile.good())
 	{
 		char character = transposonFile.get();
-		
+
 		if (!transposonFile.good())
 			character = '\n'; // make sure the last line is processed, even if it does not end on a line feed
 
@@ -1150,7 +1192,7 @@ void readTransposonsFromFile(ifstream &transposonFile, TFileFormat fileFormat, T
 				fieldValue = "";
 			}
 		}
-		else 
+		else
 		{
 			if (!((character == '\r') && (transposonFile.peek() == '\n'))) // skip carriage-returns, if the next character is a line feed
 			{
@@ -1279,7 +1321,7 @@ void findSuppressedTransposons(TPingPongSignaturesByOverlap &pingPongSignaturesB
 		for (TTransposonsPerContig::iterator transposon = contig->second.begin(); transposon != contig->second.end(); ++transposon)
 			transposonsSortedByPValue.push_back(transposon);
 	transposonsSortedByPValue.sort(compareTransposonsByPValue);
-	
+
 	unsigned i = 1;
 	float previousPValue = 1;
 	float previousQValue = 1;
@@ -1562,7 +1604,7 @@ int main(int argc, char const ** argv)
 	// go to output directory
 	if (length(options.output) > 0)
 	{
-		#if defined(WIN32) || defined(_WIN32) 
+		#if defined(WIN32) || defined(_WIN32)
 		CreateDirectory(toCString(options.output), NULL);
 		if (SetCurrentDirectory(toCString(options.output)) == 0)
 		#else
@@ -1636,4 +1678,3 @@ int main(int argc, char const ** argv)
 
 	return 0;
 }
-
